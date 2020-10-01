@@ -3,7 +3,7 @@
 #include<utility>
 #include<string>
 #include<functional>
-#include<sstream>
+#include<vector>
 
 using namespace std;
 
@@ -14,19 +14,15 @@ template<typename T>
 using Parser = function<ParserReturn<T>(optional<string>)>;
 
 ParserReturn<char> getChar(optional<string> str){
-	if(str){
-		if(str->length() > 0){
-			auto ch = str->at(0);
-			auto rest = str->substr(1);
-
-			return make_pair(ch, 
-					rest.length() == 0 
-					? nullopt 
-					: (optional<string>) rest);
-		}
-		return make_pair(nullopt, nullopt);
-	}
-	return make_pair(nullopt, str);
+	return str 
+		? make_pair(
+			str->length() > 0 
+				? (optional<char>) str->at(0) 
+				: nullopt,
+			str->length() > 1 
+				? (optional<string>) str->substr(1) 
+				: nullopt)
+		: make_pair(nullopt, nullopt);
 }
 
 
