@@ -28,14 +28,12 @@ ParserReturn<char> getChar(optional<string> str){
 
 Parser<char> matchPred(function<bool(char)> pred){
 	return [pred] (optional<string> str) -> ParserReturn<char> {
-		if(str){
-			auto [ch, rest] = getChar(str);
-			if(!ch || !pred(*ch))
-				return make_pair(nullopt, str);
-			return make_pair(ch, rest);
-		}
+		if(!str) return make_pair(nullopt, nullopt);
 
-		return make_pair(nullopt, nullopt);
+		auto [ch, rest] = getChar(str);
+		return !ch || !pred(*ch)
+			? make_pair(nullopt, str)
+			: make_pair(ch, rest);
 	};
 }
 
