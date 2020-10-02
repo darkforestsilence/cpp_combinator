@@ -2,14 +2,12 @@
 #include<string>
 #include<functional>
 
-using namespace std;
+template<typename T>
+using ParserReturn = std::pair<std::optional<T>,std::optional<std::string>>;
 
 template<typename T>
-using ParserReturn = pair<optional<T>,optional<string>>;
+using Parser = std::function<ParserReturn<T>(std::optional<std::string>)>;
 
-template<typename T>
-using Parser = function<ParserReturn<T>(optional<string>)>;
-
-ParserReturn<char> getChar(optional<string> str);
-Parser<char> matchPred(function<bool(char)> pred);
+ParserReturn<char> getChar(std::optional<std::string> str);
+Parser<char> matchPred(std::function<bool(char)> pred);
 Parser<char> matchChar(char c);
