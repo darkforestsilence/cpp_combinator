@@ -18,7 +18,8 @@ int main(void){
 	if(result) {
 		auto nums = map<char, int>([](char c) -> int { return c - '0'; }, *result);
 
-		cout << nums;
+		for(auto it = nums->begin(); it != nums->end(); it++)
+			cout << *it;
 		cout << endl << rest.value_or("String End") << endl;
 	}
 
