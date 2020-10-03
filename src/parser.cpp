@@ -1,9 +1,7 @@
-#include<variant>
 #include<optional>
 #include<utility>
 #include<string>
 #include<functional>
-#include<vector>
 
 using namespace std;
 
@@ -31,9 +29,9 @@ Parser<char> matchPred(function<bool(char)> pred){
 		if(!str) return make_pair(nullopt, nullopt);
 
 		auto [ch, rest] = getChar(str);
-		return !ch || !pred(*ch)
-			? make_pair(nullopt, str)
-			: make_pair(ch, rest);
+		return ch && pred(*ch)
+			? make_pair(ch, rest)
+			: make_pair(nullopt, str);
 	};
 }
 
