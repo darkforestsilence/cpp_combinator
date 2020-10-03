@@ -82,3 +82,13 @@ std::list<U>* map(std::function<U(T)> func, std::list<T>* list) {
 	}
 	return l2;
 }
+
+template<typename T, typename U>
+U fold(std::function<U(T, U)> func, std::list<T>* list, U u){
+	for(typename std::list<T>::iterator it = list->begin();
+			it != list->end();
+			++it){
+		u =  func(*it, u);
+	}
+	return u;
+}

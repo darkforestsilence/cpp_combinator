@@ -7,20 +7,24 @@ using namespace std;
 
 int main(void){
 	auto digit = matchPred([](char c){ return c >= '0' && c <= '9'; });
-	auto number = some(digit);
+	auto integer = some(digit);
+		
 
 	cout << "Input test string: ";
 	string input;
 	getline(cin, input);
 
-	auto [result, rest] = number(input);
+	auto [result, rest] = integer(input);
 
-	if(result) {
-		auto nums = map<char, int>([](char c) -> int { return c - '0'; }, *result);
+	if(result){
+		int i = fold<char,int> (
+			[](char c, int i) -> int { return (i * 10) + (c - '0'); },
+			*result,
+			0);
+		cout << "Parsed Successfully: " << i << endl;
+	} else {
+		cout << "Parse Error" << endl;
 
-		for(auto it = nums->begin(); it != nums->end(); it++)
-			cout << *it;
-		cout << endl << rest.value_or("String End") << endl;
 	}
 
 	return 0;
