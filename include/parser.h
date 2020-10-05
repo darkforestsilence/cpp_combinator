@@ -4,19 +4,31 @@
 #include<functional>
 #include<list>
 
-template<typename T>
-using ParserReturn = std::pair<std::optional<T>,std::optional<std::string>>;
+template<typename T, typename U>
+using ParserReturn = std::pair<std::optional<T>,std::optional<U>>;
 
-template<typename T>
-using Parser = std::function<ParserReturn<T>(std::optional<std::string>)>;
+template<typename T, typename U>
+using Parser = std::function<ParserReturn<T,U>(std::optional<U>)>;
 
-ParserReturn<char> getChar(std::optional<std::string> str);
-Parser<char> matchPred(std::function<bool(char)> pred);
-Parser<char> matchChar(char c);
+ParserReturn<char, std::string> getChar(std::optional<std::string> str);
 
-template<typename T,typename U>
-Parser<std::pair<T,U>> andThen(Parser<T> first, Parser<U> second){
-	return [first, second](std::optional<std::string> str) -> ParserReturn<std::pair<T,U>> {
+template<typename T, typename U>
+Parser<T,U> matchPred(std::function<bool(T)> pred){
+	return [pred] (std::optional<U> str) -> ParserReturn<T,U> {
+		if(!str) return make_pair(std::nullopt, std::nullopt);
+
+		auto [ch, rest] = getChar(str);
+		return ch && pred(*ch)
+			? make_pair(ch, rest)
+			: make_pair(std::nullopt, str);
+	};
+}
+
+Parser<char, std::string> matchChar(char c);
+
+template<typename T,typename U, typename V>
+Parser<std::pair<T,U>, V> andThen(Parser<T,V> first, Parser<U,V> second){
+	return [first, second](std::optional<V> str) -> ParserReturn<std::pair<T,U>, V> {
 		auto [p1, rest1] = first(str);
 		if(p1){
 			auto [p2, rest] = second(rest1);
@@ -28,10 +40,10 @@ Parser<std::pair<T,U>> andThen(Parser<T> first, Parser<U> second){
 	};
 }
 
-template<typename T>
-Parser<T> either(Parser<T> a, Parser<T> b){
-	return [a, b](std::optional<std::string> str) ->
-		ParserReturn<T> {
+template<typename T, typename U>
+Parser<T,U> either(Parser<T,U> a, Parser<T,U> b){
+	return [a, b](std::optional<U> str) ->
+		ParserReturn<T,U> {
 			auto [p1, rest1] = a(str);
 			if(p1){
 				return std::make_pair(
@@ -41,13 +53,13 @@ Parser<T> either(Parser<T> a, Parser<T> b){
 		};
 }
 
-template<typename T>
-Parser<std::list<T>*> many(Parser<T> parser);
+template<typename T, typename U>
+Parser<std::list<T>*, U> many(Parser<T, U> parser);
 
-template<typename T>
-Parser<std::list<T>*> some(Parser<T> parser){
-	return [parser](std::optional<std::string> str) -> 
-		ParserReturn<std::list<T>*> {
+template<typename T, typename U>
+Parser<std::list<T>*, U> some(Parser<T, U> parser){
+	return [parser](std::optional<U> str) -> 
+		ParserReturn<std::list<T>*, U> {
 			auto [first, rest1] = parser(str);
 			if(!first)
 				return std::make_pair(std::nullopt, 
@@ -58,10 +70,10 @@ Parser<std::list<T>*> some(Parser<T> parser){
 		};
 }
 
-template<typename T>
-Parser<std::list<T>*> many(Parser<T> parser){
-	return [parser](std::optional<std::string> str) ->
-		ParserReturn<std::list<T>*> {
+template<typename T, typename U>
+Parser<std::list<T>*, U> many(Parser<T,U> parser){
+	return [parser](std::optional<U> str) ->
+		ParserReturn<std::list<T>*, U> {
 			auto [first, rest1] = parser(str);
 			if(!first)
 				return std::make_pair(new std::list<T>(), 

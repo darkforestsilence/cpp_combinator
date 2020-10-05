@@ -6,7 +6,7 @@
 using namespace std;
 
 int main(void){
-	auto digit = matchPred([](char c){ return c >= '0' && c <= '9'; });
+	auto digit = matchPred<char, string>([](char c){ return c >= '0' && c <= '9'; });
 	auto integer = some(digit);
 		
 
