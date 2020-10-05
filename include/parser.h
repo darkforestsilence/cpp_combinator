@@ -10,7 +10,18 @@ using ParserReturn = std::pair<std::optional<T>,std::optional<U>>;
 template<typename T, typename U>
 using Parser = std::function<ParserReturn<T,U>(std::optional<U>)>;
 
-ParserReturn<char, std::string> getChar(std::optional<std::string> str);
+ParserReturn<char, std::string> getChar(std::optional<std::string> str){
+	return str 
+		? std::make_pair(
+			str->length() > 0 
+				? (std::optional<char>) str->at(0) 
+				: std::nullopt,
+			str->length() > 1 
+				? (std::optional<std::string>) str->substr(1) 
+				: std::nullopt)
+		: make_pair(std::nullopt, std::nullopt);
+}
+
 
 template<typename T, typename U>
 Parser<T,U> matchPred(std::function<bool(T)> pred){
