@@ -18,6 +18,3 @@ ParserReturn<char, string> getChar(optional<string> str){
 		: make_pair(nullopt, nullopt);
 }
 
-Parser<char, string> matchChar(char c){
-	return matchPred<char, string>([c] (char ch) -> bool { return c == ch; });
-}

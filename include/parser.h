@@ -14,17 +14,20 @@ ParserReturn<char, std::string> getChar(std::optional<std::string> str);
 
 template<typename T, typename U>
 Parser<T,U> matchPred(std::function<bool(T)> pred){
-	return [pred] (std::optional<U> str) -> ParserReturn<T,U> {
-		if(!str) return make_pair(std::nullopt, std::nullopt);
+	return [pred] (std::optional<U> list_value) -> ParserReturn<T,U> {
+		if(!list_value) return make_pair(std::nullopt, std::nullopt);
 
-		auto [ch, rest] = getChar(str);
+		auto [ch, rest] = getChar(list_value);
 		return ch && pred(*ch)
 			? make_pair(ch, rest)
-			: make_pair(std::nullopt, str);
+			: make_pair(std::nullopt, list_value);
 	};
 }
 
-Parser<char, std::string> matchChar(char c);
+template<typename T, typename U>
+Parser<T,U> matchVal(T c){
+	return matchPred<T, U>([c] (T ch) -> bool { return c == ch; });
+}
 
 template<typename T,typename U, typename V>
 Parser<std::pair<T,U>, V> andThen(Parser<T,V> first, Parser<U,V> second){
