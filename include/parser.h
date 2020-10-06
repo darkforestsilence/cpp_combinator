@@ -4,12 +4,14 @@
 #include<functional>
 #include<list>
 
+
+// define some type names to make the code simpler
 template<typename T, typename U>
 using ParserReturn = std::pair<std::optional<T>,std::optional<U>>;
-
 template<typename T, typename U>
 using Parser = std::function<ParserReturn<T,U>(std::optional<U>)>;
 
+// maybe pull a char from the front of the input string
 ParserReturn<char, std::string> getChar(std::optional<std::string> str){
 	return str 
 		? std::make_pair(
@@ -23,6 +25,7 @@ ParserReturn<char, std::string> getChar(std::optional<std::string> str){
 }
 
 
+// return a function that will match a value against a predicate
 template<typename T, typename U>
 Parser<T,U> matchPred(std::function<bool(T)> pred){
 	return [pred] (std::optional<U> list_value) -> ParserReturn<T,U> {
@@ -35,11 +38,13 @@ Parser<T,U> matchPred(std::function<bool(T)> pred){
 	};
 }
 
+// get a function that will match against a specific value
 template<typename T, typename U>
 Parser<T,U> matchVal(T c){
 	return matchPred<T, U>([c] (T ch) -> bool { return c == ch; });
 }
 
+// match a sequence of parsers
 template<typename T,typename U, typename V>
 Parser<std::pair<T,U>, V> andThen(Parser<T,V> first, Parser<U,V> second){
 	return [first, second](std::optional<V> str) -> ParserReturn<std::pair<T,U>, V> {
@@ -54,6 +59,7 @@ Parser<std::pair<T,U>, V> andThen(Parser<T,V> first, Parser<U,V> second){
 	};
 }
 
+// select between one of two options
 template<typename T, typename U>
 Parser<T,U> either(Parser<T,U> a, Parser<T,U> b){
 	return [a, b](std::optional<U> str) ->
@@ -67,9 +73,11 @@ Parser<T,U> either(Parser<T,U> a, Parser<T,U> b){
 		};
 }
 
+// forward declare many for use in some
 template<typename T, typename U>
 Parser<std::list<T>*, U> many(Parser<T, U> parser);
 
+// match one or more of a parser 
 template<typename T, typename U>
 Parser<std::list<T>*, U> some(Parser<T, U> parser){
 	return [parser](std::optional<U> str) -> 
@@ -84,6 +92,7 @@ Parser<std::list<T>*, U> some(Parser<T, U> parser){
 		};
 }
 
+// match 0 or more of a parser
 template<typename T, typename U>
 Parser<std::list<T>*, U> many(Parser<T,U> parser){
 	return [parser](std::optional<U> str) ->
@@ -98,6 +107,10 @@ Parser<std::list<T>*, U> many(Parser<T,U> parser){
 		};
 }
 
+// map a function over a list
+// this can mutate the list to be another type
+// or just change the values
+// eg. map(add(5), list)
 template<typename T, typename U>
 std::list<U>* map(std::function<U(T)> func, std::list<T>* list) {
 	std::list<U>* l2 = new std::list<U>();
@@ -109,6 +122,9 @@ std::list<U>* map(std::function<U(T)> func, std::list<T>* list) {
 	return l2;
 }
 
+// reduce a list down to a single value using an accumulator
+// this might be better to write using recursion
+// but a loop is ok for the current inputs
 template<typename T, typename U>
 U fold(std::function<U(T, U)> func, std::list<T>* list, U u){
 	for(typename std::list<T>::iterator it = list->begin();
