@@ -7,7 +7,7 @@ using namespace std;
 
 int main(void){
 	// Match a character from 0-9
-	auto digit = matchPred<char, string>([](char c){ return c >= '0' && c <= '9'; });
+	auto digit = matchPred<char,char>([](char c){ return c >= '0' && c <= '9'; });
 	// match one or more digits
 	auto integer = some(digit);
 		
@@ -18,7 +18,7 @@ int main(void){
 	getline(cin, input);
 
 	// run the parser
-	auto [result, rest] = integer(input);
+	auto [result, rest] = integer(list<char>(input.begin(), input.end()));
 
 	// use the fold function to reduce the list to an int
 	if(result){

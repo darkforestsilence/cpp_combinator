@@ -6,20 +6,25 @@
 
 
 // define some type names to make the code simpler
+template<typename T>
+using Maybe = std::optional<T>;
+template<typename U>
+using ParserInput = Maybe<std::list<U>>;
 template<typename T, typename U>
-using ParserReturn = std::pair<std::optional<T>,std::optional<U>>;
+using ParserReturn = std::pair<Maybe<T>,Maybe<std::list<U>>>;
 template<typename T, typename U>
-using Parser = std::function<ParserReturn<T,U>(std::optional<U>)>;
+using Parser = std::function<ParserReturn<T,U>(ParserInput<U>)>;
 
-// maybe pull a char from the front of the input string
-ParserReturn<char, std::string> getChar(std::optional<std::string> str){
-	return str 
+// maybe pull a value from the front of the input string
+template<typename T, typename U>
+ParserReturn<T, U> getValue(ParserInput<U> string){
+	return string
 		? std::make_pair(
-			str->length() > 0 
-				? (std::optional<char>) str->at(0) 
+			string->size() > 0 
+				? (Maybe<char>) *(string->begin())
 				: std::nullopt,
-			str->length() > 1 
-				? (std::optional<std::string>) str->substr(1) 
+			string->size() > 1 
+				? (ParserInput<char>) std::list<char>(++(string->begin()), string->end())
 				: std::nullopt)
 		: make_pair(std::nullopt, std::nullopt);
 }
@@ -28,13 +33,13 @@ ParserReturn<char, std::string> getChar(std::optional<std::string> str){
 // return a function that will match a value against a predicate
 template<typename T, typename U>
 Parser<T,U> matchPred(std::function<bool(T)> pred){
-	return [pred] (std::optional<U> list_value) -> ParserReturn<T,U> {
+	return [pred] (ParserInput<U> list_value) -> ParserReturn<T,U> {
 		if(!list_value) return make_pair(std::nullopt, std::nullopt);
 
-		auto [ch, rest] = getChar(list_value);
+		auto [ch, rest] = getValue<T,U>(std::list<char>(list_value->begin(), list_value->end()));
 		return ch && pred(*ch)
-			? make_pair(ch, rest)
-			: make_pair(std::nullopt, list_value);
+			? std::make_pair(ch, rest)
+			: std::make_pair(std::nullopt, list_value);
 	};
 }
 
@@ -47,7 +52,7 @@ Parser<T,U> matchVal(T c){
 // match a sequence of parsers
 template<typename T,typename U, typename V>
 Parser<std::pair<T,U>, V> andThen(Parser<T,V> first, Parser<U,V> second){
-	return [first, second](std::optional<V> str) -> ParserReturn<std::pair<T,U>, V> {
+	return [first, second](ParserInput<V> str) -> ParserReturn<std::pair<T,U>, V> {
 		auto [p1, rest1] = first(str);
 		if(p1){
 			auto [p2, rest] = second(rest1);
@@ -62,7 +67,7 @@ Parser<std::pair<T,U>, V> andThen(Parser<T,V> first, Parser<U,V> second){
 // select between one of two options
 template<typename T, typename U>
 Parser<T,U> either(Parser<T,U> a, Parser<T,U> b){
-	return [a, b](std::optional<U> str) ->
+	return [a, b](ParserInput<U> str) ->
 		ParserReturn<T,U> {
 			auto [p1, rest1] = a(str);
 			if(p1){
@@ -80,7 +85,7 @@ Parser<std::list<T>*, U> many(Parser<T, U> parser);
 // match one or more of a parser 
 template<typename T, typename U>
 Parser<std::list<T>*, U> some(Parser<T, U> parser){
-	return [parser](std::optional<U> str) -> 
+	return [parser](ParserInput<U> str) -> 
 		ParserReturn<std::list<T>*, U> {
 			auto [first, rest1] = parser(str);
 			if(!first)
@@ -95,7 +100,7 @@ Parser<std::list<T>*, U> some(Parser<T, U> parser){
 // match 0 or more of a parser
 template<typename T, typename U>
 Parser<std::list<T>*, U> many(Parser<T,U> parser){
-	return [parser](std::optional<U> str) ->
+	return [parser](ParserInput<U> str) ->
 		ParserReturn<std::list<T>*, U> {
 			auto [first, rest1] = parser(str);
 			if(!first)
