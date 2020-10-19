@@ -7,9 +7,11 @@
 using namespace std;
 
 ParserReturn<unsigned int, char> integer(ParserInput<char> input){
-	auto[result, rest] = some(matchPred<char, char>([](char c){
+	auto number = some(matchPred<char, char>([](char c){
 		return c >= '0' && c <= '9';
-	}))(input);
+	}));
+
+	auto [result, rest] = number(input);
 
 	return make_pair(opfold<char, int>(
 		[](char c, int i) -> int { return (i * 10) + (c- '0'); },
