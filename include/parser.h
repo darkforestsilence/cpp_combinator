@@ -138,3 +138,12 @@ U fold(std::function<U(T, U)> func, std::list<T>* list, U u){
 	}
 	return u;
 }
+
+template<typename T, typename U>
+Maybe<U> opfold(std::function<U(T,U)> func, Maybe<std::list<T>*> list, Maybe<U> u){
+	if(!u)
+		return std::nullopt;
+	if(!list)
+		return std::nullopt;
+	return fold(func, *list, *u);
+}
