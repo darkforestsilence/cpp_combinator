@@ -14,49 +14,53 @@ using ParserReturn = std::pair<Maybe<T>,Maybe<std::list<U>>>;
 template<typename T, typename U>
 using Parser = std::function<ParserReturn<T,U>(ParserInput<U>)>;
 
+
+template<typename InputElement>
+Maybe<InputElement> maybeFirst(ParserInput<InputElement> list){
+	return list->size() > 0 ? (Maybe<InputElement>) *(list->begin()) : std::nullopt;
+}
+
+template<typename InputElement>
+ParserInput<InputElement> maybeRest(ParserInput<InputElement> list){
+	return list->size() > 1 ?
+		(ParserInput<InputElement>) std::list<InputElement>(++(list->begin()), list->end()) : std::nullopt;
+}
+
 // maybe pull a value from the front of the input string
-template<typename T, typename U>
-ParserReturn<T, U> getValue(ParserInput<U> string){
-	return string
-		? std::make_pair(
-			string->size() > 0 
-				? (Maybe<char>) *(string->begin())
-				: std::nullopt,
-			string->size() > 1 
-				? (ParserInput<char>) std::list<char>(++(string->begin()), string->end())
-				: std::nullopt)
-		: make_pair(std::nullopt, std::nullopt);
+template<typename InputElement>
+ParserReturn<InputElement, InputElement> getValue(ParserInput<InputElement> list){
+	return list 
+		? std::make_pair(maybeFirst(list), maybeRest(list))
+		: std::make_pair(std::nullopt, std::nullopt);
 }
 
 
 // return a function that will match a value against a predicate
-template<typename T, typename U>
-Parser<T,U> matchPred(std::function<bool(T)> pred){
-	return [pred] (ParserInput<U> list_value) -> ParserReturn<T,U> {
-		if(!list_value) return make_pair(std::nullopt, std::nullopt);
-
-		auto [ch, rest] = getValue<T,U>(std::list<char>(list_value->begin(), list_value->end()));
-		return ch && pred(*ch)
-			? std::make_pair(ch, rest)
-			: std::make_pair(std::nullopt, list_value);
+template<typename InputElement>
+Parser<InputElement,InputElement> matchPred(std::function<bool(InputElement)> pred){
+	return [pred] (ParserInput<InputElement> list) -> ParserReturn<InputElement,InputElement> {
+		auto [element, rest] = getValue<InputElement>(list);
+		return element && pred(*element)
+			? std::make_pair(element, rest)
+			: std::make_pair(std::nullopt, list);
 	};
 }
 
 // get a function that will match against a specific value
-template<typename T, typename U>
-Parser<T,U> matchVal(T c){
-	return matchPred<T, U>([c] (T ch) -> bool { return c == ch; });
+template<typename InputElement>
+Parser<InputElement, InputElement> matchVal(InputElement needed){
+	return matchPred<InputElement>([needed] (InputElement value) -> bool { return value == needed; });
 }
 
 // match a sequence of parsers
-template<typename T,typename U, typename V>
-Parser<std::pair<T,U>, V> andThen(Parser<T,V> first, Parser<U,V> second){
-	return [first, second](ParserInput<V> str) -> ParserReturn<std::pair<T,U>, V> {
-		auto [p1, rest1] = first(str);
-		if(p1){
-			auto [p2, rest] = second(rest1);
-			if(p2){
-				return std::make_pair(std::make_pair(*p1, *p2), rest);
+template<typename Type1,typename Type2, typename InputElement>
+Parser<std::pair<Type1,Type2>, InputElement> andThen(Parser<Type1,InputElement> first, Parser<Type2,InputElement> second){
+	return [first, second](ParserInput<InputElement> list) -> ParserReturn<std::pair<Type1,Type2>, InputElement> {
+		auto [result1, rest1] = first(list);
+		if(result1){
+			auto [result2, rest] = second(rest1);
+			if(result2){
+				return std::make_pair(std::make_pair(*result1, *result2), rest);
 			}
 		}
 		return std::make_pair(std::nullopt, std::nullopt);
@@ -64,17 +68,12 @@ Parser<std::pair<T,U>, V> andThen(Parser<T,V> first, Parser<U,V> second){
 }
 
 // select between one of two options
-template<typename T, typename U>
-Parser<T,U> either(Parser<T,U> a, Parser<T,U> b){
-	return [a, b](ParserInput<U> str) ->
-		ParserReturn<T,U> {
-			auto [p1, rest1] = a(str);
-			if(p1){
-				return std::make_pair(
-						p1, rest1);
-			}
-			return b(str);
-		};
+template<typename Result, typename InputElement>
+Parser<Result,InputElement> either(Parser<Result,InputElement> first, Parser<Result,InputElement> second){
+	return [first, second](ParserInput<InputElement> list) -> ParserReturn<Result,InputElement> {
+		auto result = first(list);
+		return result.first ? result : second(list);
+	};
 }
 
 // forward declare many for use in some

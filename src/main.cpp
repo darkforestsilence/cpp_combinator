@@ -7,7 +7,7 @@
 using namespace std;
 
 ParserReturn<unsigned int, char> integer(ParserInput<char> input){
-	auto number = some(matchPred<char, char>([](char c){
+	auto number = some(matchPred<char>([](char c){
 		return c >= '0' && c <= '9';
 	}));
 
@@ -20,8 +20,6 @@ ParserReturn<unsigned int, char> integer(ParserInput<char> input){
 }
 
 int main(void){
-	
-
 	// get some input to check
 	cout << "Input test string: ";
 	string input;
