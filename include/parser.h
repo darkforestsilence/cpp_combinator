@@ -5,15 +5,14 @@
 
 
 // define some type names to make the code simpler
-template<typename T>
-using Maybe = std::optional<T>;
-template<typename U>
-using ParserInput = Maybe<std::list<U>>;
-template<typename T, typename U>
-using ParserReturn = std::pair<Maybe<T>,Maybe<std::list<U>>>;
-template<typename T, typename U>
-using Parser = std::function<ParserReturn<T,U>(ParserInput<U>)>;
-
+template<typename Type>
+using Maybe = std::optional<Type>;
+template<typename InputElement>
+using ParserInput = Maybe<std::list<InputElement>>;
+template<typename Result, typename InputElement>
+using ParserReturn = std::pair<Maybe<Result>,Maybe<std::list<InputElement>>>;
+template<typename Result, typename InputElement>
+using Parser = std::function<ParserReturn<Result,InputElement>(ParserInput<InputElement>)>;
 
 template<typename InputElement>
 Maybe<InputElement> maybeFirst(ParserInput<InputElement> list){
@@ -128,21 +127,21 @@ std::list<U>* map(std::function<U(T)> func, std::list<T>* list) {
 // reduce a list down to a single value using an accumulator
 // this might be better to write using recursion
 // but a loop is ok for the current inputs
-template<typename T, typename U>
-U fold(std::function<U(T, U)> func, std::list<T>* list, U u){
-	for(typename std::list<T>::iterator it = list->begin();
-			it != list->end();
-			++it){
-		u =  func(*it, u);
-	}
-	return u;
-}
-
-template<typename T, typename U>
-Maybe<U> opfold(std::function<U(T,U)> func, Maybe<std::list<T>*> list, Maybe<U> u){
-	if(!u)
-		return std::nullopt;
+template<typename Type, typename Accumulator>
+Maybe<Accumulator> fold(std::function<Accumulator(Type, Accumulator)> func, Maybe<std::list<Type>*> list, Accumulator acc){
 	if(!list)
 		return std::nullopt;
-	return fold(func, *list, *u);
+
+	for(typename std::list<Type>::iterator it = (*list)->begin(); it != (*list)->end();){
+		acc = func(*(it++), acc);
+	}
+	return acc;
+}
+
+template<typename Type, typename Accumulator, typename InputElement>
+Parser<Accumulator, InputElement> pfold(std::function<Accumulator(Type, Accumulator)> func, Parser<std::list<Type>*, InputElement> parser, Accumulator identity){
+	return [func, parser, identity](ParserInput<InputElement> list) -> ParserReturn<Accumulator,InputElement>{
+		auto [result, rest] = parser(list);
+		return std::make_pair(fold(func, result, identity), rest);
+	};
 }
