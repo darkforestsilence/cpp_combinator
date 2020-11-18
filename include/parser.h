@@ -128,7 +128,7 @@ std::list<U>* map(std::function<U(T)> func, std::list<T>* list) {
 // this might be better to write using recursion
 // but a loop is ok for the current inputs
 template<typename Type, typename Accumulator>
-Maybe<Accumulator> fold(std::function<Accumulator(Type, Accumulator)> func, Maybe<std::list<Type>*> list, Accumulator acc){
+Maybe<Accumulator> fold(Maybe<std::list<Type>*> list, std::function<Accumulator(Type, Accumulator)> func,  Accumulator acc){
 	if(!list)
 		return std::nullopt;
 
@@ -139,9 +139,9 @@ Maybe<Accumulator> fold(std::function<Accumulator(Type, Accumulator)> func, Mayb
 }
 
 template<typename Type, typename Accumulator, typename InputElement>
-Parser<Accumulator, InputElement> pfold(std::function<Accumulator(Type, Accumulator)> func, Parser<std::list<Type>*, InputElement> parser, Accumulator identity){
+Parser<Accumulator, InputElement> pfold(Parser<std::list<Type>*, InputElement> parser, std::function<Accumulator(Type, Accumulator)> func, Accumulator identity){
 	return [func, parser, identity](ParserInput<InputElement> list) -> ParserReturn<Accumulator,InputElement>{
 		auto [result, rest] = parser(list);
-		return std::make_pair(fold(func, result, identity), rest);
+		return std::make_pair(fold(result, func, identity), rest);
 	};
 }

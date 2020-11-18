@@ -4,14 +4,14 @@ workspace "Compiler"
 project "Compiler"
 	kind "ConsoleApp"
 	language "C++"
-	cppdialect "c++17"
 	targetdir "bin/%{cfg.buildcfg}"
 
 	buildoptions {
 		"-Wall",
 		"-Werror",
 		"-Wpedantic",
-		"-O3"
+		"-O3",
+		"-std=c++2a"
 	}
 
 	files { "include/**.h", "src/**.cpp" }

@@ -7,8 +7,8 @@
 using namespace std;
 
 Parser integer = pfold<char, int, char>(
-			[](char c, int i) -> int { return (i * 10) + (c - '0'); },
 			some(matchPred<char>([](char c){ return isdigit(c);})),
+			[](char c, int i) -> int { return (i * 10) + (c - '0'); },
 			0);
 
 int main(void){
